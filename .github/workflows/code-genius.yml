@@ -1,0 +1,38 @@
+# Code Genius GitHub Action Placeholder
+# 
+# This workflow would be configured to run Code Genius threat modeling
+# scans when pull requests are created or updated.
+#
+# Example configuration (customize based on your Code Genius setup):
+#
+# name: Code Genius Threat Model Scan
+# 
+# on:
+#   pull_request:
+#     types: [opened, synchronize, reopened]
+#   push:
+#     branches: [main]
+# 
+# jobs:
+#   code-genius-scan:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+#       
+#       - name: Run Code Genius
+#         uses: devici/code-genius-action@v1
+#         with:
+#           api-key: ${{ secrets.CODE_GENIUS_API_KEY }}
+#           mode: repo
+#           diff-mode: true
+#       
+#       - name: Upload threat model
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: threat-model-diagram
+#           path: threat-model.png
+
+# For more information on configuring Code Genius, visit:
+# https://devici.com/code-genius
+
