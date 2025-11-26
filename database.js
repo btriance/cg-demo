@@ -16,6 +16,21 @@ db.exec(`
   )
 `);
 
+// Create attachments table for file uploads
+db.exec(`
+  CREATE TABLE IF NOT EXISTS attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id INTEGER NOT NULL,
+    filename TEXT NOT NULL,
+    original_name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    file_size INTEGER NOT NULL,
+    mime_type TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+  )
+`);
+
 // Database operations
 const taskDB = {
   // Get all tasks
@@ -49,6 +64,36 @@ const taskDB = {
   // Delete task
   deleteTask: (id) => {
     const stmt = db.prepare('DELETE FROM tasks WHERE id = ?');
+    const result = stmt.run(id);
+    return result.changes > 0;
+  },
+
+  // Attachment operations
+
+  // Create attachment record
+  createAttachment: (taskId, filename, originalName, filePath, fileSize, mimeType) => {
+    const stmt = db.prepare(
+      'INSERT INTO attachments (task_id, filename, original_name, file_path, file_size, mime_type) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    const result = stmt.run(taskId, filename, originalName, filePath, fileSize, mimeType);
+    return result.lastInsertRowid;
+  },
+
+  // Get attachments for a task
+  getAttachmentsByTaskId: (taskId) => {
+    const stmt = db.prepare('SELECT * FROM attachments WHERE task_id = ? ORDER BY created_at DESC');
+    return stmt.all(taskId);
+  },
+
+  // Get attachment by ID
+  getAttachmentById: (id) => {
+    const stmt = db.prepare('SELECT * FROM attachments WHERE id = ?');
+    return stmt.get(id);
+  },
+
+  // Delete attachment
+  deleteAttachment: (id) => {
+    const stmt = db.prepare('DELETE FROM attachments WHERE id = ?');
     const result = stmt.run(id);
     return result.changes > 0;
   }
