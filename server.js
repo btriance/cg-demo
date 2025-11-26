@@ -3,6 +3,7 @@ const path = require('path');
 require('dotenv').config();
 
 const taskDB = require('./database');
+const { sendTaskReminder, sendTestEmail, verifyConnection } = require('./emailService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -91,6 +92,71 @@ app.delete('/api/tasks/:id', (req, res) => {
       res.json({ success: true, message: 'Task deleted successfully' });
     } else {
       res.status(404).json({ success: false, error: 'Task not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Email Routes
+
+// POST /api/tasks/:id/reminder - Send email reminder for a task
+app.post('/api/tasks/:id/reminder', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email address is required' });
+    }
+
+    const task = taskDB.getTaskById(req.params.id);
+    
+    if (!task) {
+      return res.status(404).json({ success: false, error: 'Task not found' });
+    }
+
+    const result = await sendTaskReminder(email, task);
+    
+    res.json({ 
+      success: true, 
+      message: 'Reminder email sent successfully',
+      messageId: result.messageId
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/email/test - Send test email
+app.post('/api/email/test', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email address is required' });
+    }
+
+    const result = await sendTestEmail(email);
+    
+    res.json({ 
+      success: true, 
+      message: 'Test email sent successfully',
+      messageId: result.messageId
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/email/verify - Verify email service connection
+app.get('/api/email/verify', async (req, res) => {
+  try {
+    const isVerified = await verifyConnection();
+    
+    if (isVerified) {
+      res.json({ success: true, message: 'Email service is configured correctly' });
+    } else {
+      res.status(500).json({ success: false, error: 'Email service verification failed' });
     }
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
