@@ -3,6 +3,7 @@ const path = require('path');
 require('dotenv').config();
 
 const taskDB = require('./database');
+const { hashPassword, generateToken, authenticateToken } = require('./auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,6 +13,91 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // API Routes
+
+// Authentication Routes
+
+// POST /api/auth/register - Register new user
+app.post('/api/auth/register', (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: 'Username and password are required' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+    }
+
+    const passwordHash = hashPassword(password);
+    const userId = taskDB.createUser(username, passwordHash);
+
+    if (!userId) {
+      return res.status(409).json({ success: false, error: 'Username already exists' });
+    }
+
+    const token = generateToken(userId, username);
+    res.status(201).json({ 
+      success: true, 
+      data: { userId, username, token }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/auth/login - Login user
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: 'Username and password are required' });
+    }
+
+    const user = taskDB.getUserByUsername(username);
+    
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    const passwordHash = hashPassword(password);
+    if (passwordHash !== user.password_hash) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    const token = generateToken(user.id, user.username);
+    res.json({ 
+      success: true, 
+      data: { userId: user.id, username: user.username, token }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/auth/me - Get current user (protected route example)
+app.get('/api/auth/me', authenticateToken, (req, res) => {
+  try {
+    const user = taskDB.getUserById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    res.json({ 
+      success: true, 
+      data: { 
+        userId: user.id, 
+        username: user.username,
+        createdAt: user.created_at
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Task Routes (can be protected by adding authenticateToken middleware)
 
 // GET /api/tasks - Get all tasks
 app.get('/api/tasks', (req, res) => {
