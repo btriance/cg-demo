@@ -3,6 +3,8 @@ const path = require('path');
 require('dotenv').config();
 
 const taskDB = require('./database');
+
+const { getWeatherForCity } = require('./weatherService');
 const { hashPassword, generateToken, authenticateToken } = require('./auth');
 
 const app = express();
@@ -178,6 +180,24 @@ app.delete('/api/tasks/:id', (req, res) => {
     } else {
       res.status(404).json({ success: false, error: 'Task not found' });
     }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Weather Integration
+
+// GET /api/weather/:city - Get weather for a city
+app.get('/api/weather/:city', async (req, res) => {
+  try {
+    const { city } = req.params;
+    
+    if (!city) {
+      return res.status(400).json({ success: false, error: 'City is required' });
+    }
+
+    const weatherData = await getWeatherForCity(city);
+    res.json({ success: true, data: weatherData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
