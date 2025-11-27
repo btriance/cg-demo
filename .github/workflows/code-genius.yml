@@ -1,38 +1,34 @@
-# Code Genius GitHub Action Placeholder
-# 
-# This workflow would be configured to run Code Genius threat modeling
-# scans when pull requests are created or updated.
-#
-# Example configuration (customize based on your Code Genius setup):
-#
-# name: Code Genius Threat Model Scan
-# 
-# on:
-#   pull_request:
-#     types: [opened, synchronize, reopened]
-#   push:
-#     branches: [main]
-# 
-# jobs:
-#   code-genius-scan:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3
-#       
-#       - name: Run Code Genius
-#         uses: devici/code-genius-action@v1
-#         with:
-#           api-key: ${{ secrets.CODE_GENIUS_API_KEY }}
-#           mode: repo
-#           diff-mode: true
-#       
-#       - name: Upload threat model
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: threat-model-diagram
-#           path: threat-model.png
+# .github/code-genius.yaml
 
-# For more information on configuring Code Genius, visit:
-# https://devici.com/code-genius
+name: Run Devici Code Genius
+on:
+  # Choose between pull_request, push, fork etc. You can specify 
+  # more than one scenario.
+  pull_request:
+    # Choose between branches, tags.
+    branches:
+      # Set the desired branches or leave empty to run for 
+      # every branch.
+      - 'main'
+    
+jobs:
+    run:
+      name: Run Test PR
+      runs-on: ubuntu-latest
+    
+      steps:
+        # Step 1. Checkout the code
+        - name: Checkout Code
+          uses: actions/checkout@v4
 
+        # Step 2. Run Code Genius Repo mode provided that API token 
+        # was set in secrets and the scanning directory is '.'
+        - name: Run Code Genius
+          # Be sure to state the correct version (after '@'), 
+          # or simply choose 'latest'
+          uses: Devici-ThreatModel/code-genius-action@latest 
+          env:
+            # Make sure to include 
+            CG_CLIENT_ID: ${{ secrets.CG_CLIENT_ID }}
+            CG_CLIENT_SECRET: ${{ secrets.CG_CLIENT_SECRET }}
+            GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
