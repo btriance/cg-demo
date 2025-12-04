@@ -28,6 +28,13 @@ db.exec(`
     mime_type TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+// Create users table for authentication
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
 
@@ -96,6 +103,32 @@ const taskDB = {
     const stmt = db.prepare('DELETE FROM attachments WHERE id = ?');
     const result = stmt.run(id);
     return result.changes > 0;
+  // User operations for authentication
+  
+  // Create new user
+  createUser: (username, passwordHash) => {
+    const stmt = db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)');
+    try {
+      const result = stmt.run(username, passwordHash);
+      return result.lastInsertRowid;
+    } catch (error) {
+      if (error.message.includes('UNIQUE')) {
+        return null; // Username already exists
+      }
+      throw error;
+    }
+  },
+
+  // Get user by username
+  getUserByUsername: (username) => {
+    const stmt = db.prepare('SELECT * FROM users WHERE username = ?');
+    return stmt.get(username);
+  },
+
+  // Get user by ID
+  getUserById: (id) => {
+    const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
+    return stmt.get(id);
   }
 };
 
